@@ -19,6 +19,8 @@ local gunSpawnCvar = CreateConVar("ttt_floor_weapons_spawner_guns", "6", {FCVAR_
 
 local entityLimitCvar = CreateConVar("ttt_floor_weapons_spawner_limit", "300", {FCVAR_NOTIFY}, "How many weapons and ammo boxes can be on the map before guns and ammo stop being spawned, this includes existing guns and ammo already on the map", 0)
 
+local spawnNearCvar = CreateConVar("ttt_floor_weapons_spawner_near", "4", {FCVAR_NOTIFY}, "Number of guns to spawn near players that have no guns near them, this ignores the ttt_floor_weapons_spawner_guns limit", 0, 4)
+
 -- Gives ammo to a player's gun equivalent to ammo boxes, without going over TTT's reserve ammo limits
 local function DirectGiveAmmoBoxes(ply, className, boxNumber)
     local SWEP = weapons.Get(className)
@@ -233,45 +235,45 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
             end
         end
 
-        -- Counting number of players alive for calculating the spawn cap
         local playerCount = 0
-        local gunOffset = 50
         local noNearGunPlys = {}
+        local nearPlayerGunsCount = spawnNearCvar:GetInt()
 
+        -- Checking for players that are not nearby a gun
         for _, ply in ipairs(player.GetAll()) do
             if ply:Alive() and not ply:IsSpec() then
                 playerCount = playerCount + 1
             end
 
-            -- Finding if there are guns near players, if not spawn some
-            local skipPly = false
+            if nearPlayerGunsCount > 0 then
+                local skipPly = false
 
-            for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 250)) do
-                if ent.AutoSpawnable and not ent.AmmoType then
-                    skipPly = true
-                    break
+                for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 250)) do
+                    if ent.AutoSpawnable and not ent.AmmoType then
+                        skipPly = true
+                        break
+                    end
                 end
-            end
 
-            if not skipPly then
-                table.insert(noNearGunPlys, ply)
+                if not skipPly then
+                    table.insert(noNearGunPlys, ply)
+                end
             end
         end
 
-        print("Players with no guns near them:")
-        PrintTable(noNearGunPlys)
+        -- Force-spawning guns near players that are not nearby a gun (ignoring the gun-per-player cap below)
+        if nearPlayerGunsCount > 0 then
+            local gunOffset = 150
 
-        -- These guns are at risk of spawning outside the map but that will only happen rarely on very cramped maps
-        for _, ply in ipairs(noNearGunPlys) do
-            if entityCount < entityLimit then
-                local origPos = ply:GetPos()
-                local pos1 = origPos
-                pos1.x = pos1.x + gunOffset
-                local pos2 = origPos
-                pos2.x = pos2.x - gunOffset
-                print("Placing guns near:", ply:Nick())
-                PlaceWeapon(table.Random(floorWeapons), pos1)
-                PlaceWeapon(table.Random(floorWeapons), pos2)
+            local offsets = {Vector(gunOffset, 0, 0), Vector(-gunOffset, 0, 0), Vector(0, gunOffset, 0), Vector(0, -gunOffset, 0)}
+
+            for _, ply in ipairs(noNearGunPlys) do
+                if entityCount >= entityLimit then return end
+                local plyPos = ply:GetPos()
+
+                for i = 1, nearPlayerGunsCount do
+                    PlaceWeapon(table.Random(floorWeapons), plyPos + offsets[i])
+                end
             end
         end
 
