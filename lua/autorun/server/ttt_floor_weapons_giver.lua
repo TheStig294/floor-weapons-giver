@@ -158,30 +158,30 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
         -- Replacing all default guns with random ones if enabled
         if modActiveCvar:GetBool() and defaultGunReplace:GetBool() then
             for _, ent in ipairs(ents.GetAll()) do
-                if ent.AutoSpawnable then
-                    local class = ent:GetClass()
+                -- Don't replace guns players have already picked up (i.e. guns that have a parent)
+                if not ent.AutoSpawnable or IsValid(ent:GetParent()) then continue end
+                local class = ent:GetClass()
 
-                    for _, defaultGun in ipairs(defaultGuns) do
-                        if class == defaultGun then
-                            local ammoEnt = ent.AmmoEnt
-                            local pos = ent:GetPos()
-                            ent:Remove()
-                            local cls
+                for _, defaultGun in ipairs(defaultGuns) do
+                    if class == defaultGun then
+                        local ammoEnt = ent.AmmoEnt
+                        local pos = ent:GetPos()
+                        ent:Remove()
+                        local cls
 
-                            if not ammoEnt or not ammoGuns[ammoEnt] then
-                                cls = table.Random(ammoGuns.none)
-                                cls = ammoGuns.none[math.random(#ammoGuns.none)]
-                            else
-                                cls = table.Random(ammoGuns[ammoEnt])
-                            end
-
-                            local rdmGun = ents.Create(cls)
-                            pos.z = pos.z + 3
-                            rdmGun:SetPos(pos)
-                            rdmGun:SetAngles(VectorRand():Angle())
-                            rdmGun:Spawn()
-                            break
+                        if not ammoEnt or not ammoGuns[ammoEnt] then
+                            cls = table.Random(ammoGuns.none)
+                            cls = ammoGuns.none[math.random(#ammoGuns.none)]
+                        else
+                            cls = table.Random(ammoGuns[ammoEnt])
                         end
+
+                        local rdmGun = ents.Create(cls)
+                        pos.z = pos.z + 3
+                        rdmGun:SetPos(pos)
+                        rdmGun:SetAngles(VectorRand():Angle())
+                        rdmGun:Spawn()
+                        break
                     end
                 end
             end
@@ -244,25 +244,21 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
             end
 
             -- Finding if there are guns near players, if not spawn some
-            -- local nearGunCount = 0
             local skipPly = false
 
-            for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 500)) do
+            for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 250)) do
                 if ent.AutoSpawnable and not ent.AmmoType then
-                    print(ply, ent)
                     skipPly = true
-                    break -- nearGunCount = nearGunCount + 1
+                    break
                 end
             end
 
             if not skipPly then
                 table.insert(noNearGunPlys, ply)
             end
-            -- if nearGunCount < 2 then
-            -- end
         end
 
-        print("No near gun plys:")
+        print("Players with no guns near them:")
         PrintTable(noNearGunPlys)
 
         -- These guns are at risk of spawning outside the map but that will only happen rarely on very cramped maps
@@ -273,6 +269,7 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
                 pos1.x = pos1.x + gunOffset
                 local pos2 = origPos
                 pos2.x = pos2.x - gunOffset
+                print("Placing guns near:", ply:Nick())
                 PlaceWeapon(table.Random(floorWeapons), pos1)
                 PlaceWeapon(table.Random(floorWeapons), pos2)
             end
