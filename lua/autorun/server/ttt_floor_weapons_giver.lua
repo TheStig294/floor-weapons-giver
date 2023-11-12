@@ -169,16 +169,15 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
                         local ammoEnt = ent.AmmoEnt
                         local pos = ent:GetPos()
                         ent:Remove()
-                        local cls
+                        local ammoGunList
 
                         if not ammoEnt or not ammoGuns[ammoEnt] then
-                            cls = table.Random(ammoGuns.none)
-                            cls = ammoGuns.none[math.random(#ammoGuns.none)]
+                            ammoGunList = ammoGuns.none
                         else
-                            cls = table.Random(ammoGuns[ammoEnt])
+                            ammoGunList = ammoGuns[ammoEnt]
                         end
 
-                        local rdmGun = ents.Create(cls)
+                        local rdmGun = ents.Create(ammoGunList[math.random(#ammoGunList)])
                         pos.z = pos.z + 3
                         rdmGun:SetPos(pos)
                         rdmGun:SetAngles(VectorRand():Angle())
@@ -272,7 +271,7 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
                 local plyPos = ply:GetPos()
 
                 for i = 1, nearPlayerGunsCount do
-                    PlaceWeapon(table.Random(floorWeapons), plyPos + offsets[i])
+                    PlaceWeapon(floorWeapons[math.random(#floorWeapons)], plyPos + offsets[i])
                 end
             end
         end
@@ -284,7 +283,7 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
         -- Spawn guns!
         for pos, _ in RandomPairs(spawnPoints) do
             if spawnCount >= spawnCap or entityCount >= entityLimit then return end
-            PlaceWeapon(table.Random(floorWeapons), pos)
+            PlaceWeapon(floorWeapons[math.random(#floorWeapons)], pos)
             spawnCount = spawnCount + 1
         end
     end)
@@ -311,13 +310,13 @@ hook.Add("TTTBeginRound", "FWGGiveWeapons", function()
             end
 
             if not hasPistol then
-                local randWepPistol = autoSpawnPistols[math.random(1, #autoSpawnPistols)]
+                local randWepPistol = autoSpawnPistols[math.random(#autoSpawnPistols)]
                 ply:Give(randWepPistol.ClassName)
                 DirectGiveAmmoBoxes(ply, randWepPistol.ClassName, boxNumber)
             end
 
             if not hasHeavy then
-                local randWepHeavy = autoSpawnHeavyWeps[math.random(1, #autoSpawnHeavyWeps)]
+                local randWepHeavy = autoSpawnHeavyWeps[math.random(#autoSpawnHeavyWeps)]
                 ply:Give(randWepHeavy.ClassName)
                 DirectGiveAmmoBoxes(ply, randWepHeavy.ClassName, boxNumber)
             end
