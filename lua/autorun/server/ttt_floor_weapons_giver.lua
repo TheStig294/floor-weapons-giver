@@ -15,7 +15,7 @@ local spawnDelayCvar = CreateConVar("ttt_floor_weapons_spawner_delay", "0.2", {F
 
 local ammoSpawnCvar = CreateConVar("ttt_floor_weapons_spawner_ammo", "2", {FCVAR_NOTIFY}, "How many boxes of ammo are spawned with a gun on the ground", 0)
 
-local gunSpawnCvar = CreateConVar("ttt_floor_weapons_spawner_guns", "6", {FCVAR_NOTIFY}, "How many guns are spawned on the ground per player, if the limit is never reached", 0)
+local gunSpawnCvar = CreateConVar("ttt_floor_weapons_spawner_guns", "6", {FCVAR_NOTIFY}, "How many guns are spawned on the ground per alive player, if the limit is never reached", 0)
 
 local entityLimitCvar = CreateConVar("ttt_floor_weapons_spawner_limit", "300", {FCVAR_NOTIFY}, "How many weapons and ammo boxes can be on the map before guns and ammo stop being spawned, this includes existing guns and ammo already on the map", 0)
 
@@ -234,28 +234,28 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
             end
         end
 
-        local playerCount = 0
+        local alivePlayerCount = 0
         local noNearGunPlys = {}
         local nearPlayerGunsCount = spawnNearCvar:GetInt()
 
         -- Checking for players that are not nearby a gun
         for _, ply in ipairs(player.GetAll()) do
             if ply:Alive() and not ply:IsSpec() then
-                playerCount = playerCount + 1
-            end
+                alivePlayerCount = alivePlayerCount + 1
 
-            if nearPlayerGunsCount > 0 then
-                local skipPly = false
+                if nearPlayerGunsCount > 0 then
+                    local skipPly = false
 
-                for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 250)) do
-                    if ent.AutoSpawnable and not ent.AmmoType then
-                        skipPly = true
-                        break
+                    for _, ent in ipairs(ents.FindInSphere(ply:GetPos(), 250)) do
+                        if ent.AutoSpawnable and not ent.AmmoType then
+                            skipPly = true
+                            break
+                        end
                     end
-                end
 
-                if not skipPly then
-                    table.insert(noNearGunPlys, ply)
+                    if not skipPly then
+                        table.insert(noNearGunPlys, ply)
+                    end
                 end
             end
         end
@@ -277,7 +277,7 @@ hook.Add("TTTPrepareRound", "FWGGetSpawnPoints", function()
         end
 
         -- Take into account the number of guns already on the map as well, don't spawn any more if there are enough already
-        local spawnCap = gunSpawnCvar:GetInt() * playerCount
+        local spawnCap = gunSpawnCvar:GetInt() * alivePlayerCount
         local spawnCount = gunCount
 
         -- Spawn guns!
