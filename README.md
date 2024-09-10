@@ -1,4 +1,4 @@
-# TTT Auto-Floor Weapons Spawner
+# Auto-Floor Weapons Spawner
 Automatically spawns guns/ammo on the ground of maps that don't have enough, automatically arms any Gmod map to make it playable with TTT!\
 Also gives guns to anyone who doesn't have any when a round properly begins.\
 \
